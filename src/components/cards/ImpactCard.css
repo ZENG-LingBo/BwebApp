@@ -1,0 +1,99 @@
+.impact-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: var(--card-width);
+}
+
+.impact-visual {
+  position: relative;
+  width: 294px;
+  height: 394px;
+}
+
+.impact-rect {
+  position: absolute;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px);
+}
+
+.impact-rect-1 {
+  width: 294px;
+  height: 394px;
+  left: 0;
+  top: 0;
+  padding-top: 24px;
+}
+
+.impact-rect-2 {
+  width: 250px;
+  height: 304px;
+  left: calc(50% - 250px / 2);
+  top: 68px;
+  padding-top: 24px;
+}
+
+.impact-rect-3 {
+  width: 206px;
+  height: 214px;
+  left: calc(50% - 206px / 2);
+  top: 135px;
+  padding-top: 24px;
+}
+
+.impact-rect-4 {
+  width: 162px;
+  height: 124px;
+  left: calc(50% - 162px / 2);
+  top: 204px;
+  background: #D3947D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0;
+}
+
+.impact-glow {
+  position: absolute;
+  width: 157px;
+  height: 157px;
+  left: 72px;
+  top: 229px;
+  background: rgba(255, 105, 55, 0.5);
+  opacity: 0.3;
+  filter: blur(26px);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.impact-label-outer {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  color: var(--hl-peach);
+  opacity: 0.8;
+}
+
+.impact-label-mid {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  color: var(--hl-peach);
+  opacity: 0.8;
+}
+
+.impact-label-inner {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 24px;
+  text-align: center;
+  color: var(--hl-peach);
+}

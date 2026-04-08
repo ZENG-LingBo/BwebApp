@@ -1,0 +1,28 @@
+.quotes-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: var(--card-width);
+}
+
+.quote-item {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.quote-emoji {
+  font-size: 16px;
+  line-height: 24px;
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+  color: #8E918E;
+  opacity: 0.6;
+}
+
+.quote-content {
+  flex: 1;
+}

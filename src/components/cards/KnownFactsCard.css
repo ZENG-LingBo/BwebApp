@@ -1,0 +1,29 @@
+.known-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: var(--card-width);
+}
+
+.known-bullet {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.known-dot {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+  color: #8E918E;
+  width: 8px;
+  flex-shrink: 0;
+}
+
+.known-bullet-content {
+  flex: 1;
+}

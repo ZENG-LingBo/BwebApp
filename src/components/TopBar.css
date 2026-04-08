@@ -1,0 +1,82 @@
+.top-bar {
+  position: absolute;
+  width: 359px;
+  height: 32px;
+  left: calc(50% - 359px / 2);
+  top: 52px;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--r-pill);
+}
+
+.pill {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 4px;
+  height: 24px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-headline);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 16px;
+  color: #fff;
+  gap: 4px;
+}
+
+.pill--purple {
+  padding: 4px 8px;
+  background: rgba(128, 0, 128, 0.7);
+}
+
+.pill--dark {
+  padding: 4px 8px;
+  background: #272A27;
+}
+
+.pill--brown {
+  padding: 4px 8px;
+  background: #9E624D;
+}
+
+.pill--brown svg {
+  width: 16px;
+  height: 16px;
+}
+
+.close-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+}

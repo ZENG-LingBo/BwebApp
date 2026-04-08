@@ -1,0 +1,75 @@
+.bottom-bar {
+  position: absolute;
+  width: 343px;
+  height: 40px;
+  left: calc(50% - 343px / 2);
+  top: 738px;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bottom-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ask-ai-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  color: #fff;
+}
+
+.ask-ai-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.next-story-btn {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 8px;
+  min-width: 80px;
+  height: 32px;
+  border: 1px solid var(--separator);
+  border-radius: var(--r-pill);
+  background: none;
+  cursor: pointer;
+  gap: 4px;
+}
+
+.next-story-label {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: #fff;
+}
+
+.bottom-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.icon-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
