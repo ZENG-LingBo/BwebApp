@@ -1,6 +1,6 @@
 import './TopBar.css'
 
-export default function TopBar() {
+export default function TopBar({ category = 'WORLD', date = '10 MAR 2026', statusLabel = 'ESCALATING' }) {
   return (
     <div className="top-bar">
       <div className="top-bar-left">
@@ -14,10 +14,10 @@ export default function TopBar() {
         </div>
 
         {/* WORLD pill */}
-        <div className="pill pill--purple">WORLD</div>
+        <div className="pill pill--purple">{category}</div>
 
         {/* Date pill */}
-        <div className="pill pill--dark">10 MAR 2026</div>
+        <div className="pill pill--dark">{date}</div>
       </div>
 
       <div className="top-bar-right">
@@ -26,7 +26,7 @@ export default function TopBar() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M2 12L6 6L10 9L14 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          ESCALATING
+          {statusLabel}
         </div>
 
         {/* Close button */}

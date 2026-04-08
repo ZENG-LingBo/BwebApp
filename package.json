@@ -7,11 +7,20 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server/index.js",
+    "server:dev": "node --watch server/index.js",
+    "fetch": "node -e \"import('./server/pipeline.js').then(m => m.runPipeline(10))\"",
+    "start": "npm run build && npm run server"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.85.0",
+    "better-sqlite3": "^12.8.0",
+    "express": "^5.2.1",
+    "node-cron": "^4.2.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

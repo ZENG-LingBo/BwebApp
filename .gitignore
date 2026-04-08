@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment and data
+.env
+server/data/*.db
+server/videos/*
+!server/videos/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,6 +1,6 @@
 import './BottomBar.css'
 
-export default function BottomBar() {
+export default function BottomBar({ onNext, storyCount = 0, currentIdx = 0, hasStories = false }) {
   return (
     <div className="bottom-bar">
       {/* Ask AI */}
@@ -16,8 +16,8 @@ export default function BottomBar() {
       </div>
 
       {/* Go to next story */}
-      <button className="next-story-btn">
-        <span className="next-story-label">Go to next story</span>
+      <button className="next-story-btn" onClick={onNext} disabled={!hasStories || currentIdx >= storyCount - 1}>
+        <span className="next-story-label">{hasStories ? `Next story (${currentIdx + 1}/${storyCount})` : 'Go to next story'}</span>
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M10 4v12M10 16l-4-4M10 16l4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
