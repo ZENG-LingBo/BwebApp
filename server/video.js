@@ -19,12 +19,12 @@ if (!fs.existsSync(VIDEOS_DIR)) {
  */
 export async function searchYouTube(query, maxResults = 5) {
   try {
+    // Search specifically for YouTube Shorts (vertical 9:16 format)
     const { stdout } = await execFileAsync('yt-dlp', [
-      `ytsearch${maxResults}:${query} news`,
+      `ytsearch${maxResults}:${query} shorts`,
       '--dump-json',
       '--no-download',
-      '--flat-playlist',
-    ], { timeout: 45000, maxBuffer: 1024 * 1024 * 10 });
+    ], { timeout: 60000, maxBuffer: 1024 * 1024 * 10 });
 
     const videos = stdout.trim().split('\n')
       .filter(line => line.trim())
@@ -37,17 +37,18 @@ export async function searchYouTube(query, maxResults = 5) {
         id: v.id,
         title: v.title,
         duration: v.duration,
+        width: v.width,
+        height: v.height,
         thumbnail: v.thumbnail || v.thumbnails?.[0]?.url,
         url: v.url || v.webpage_url || `https://www.youtube.com/watch?v=${v.id}`,
+        isVertical: (v.height && v.width) ? v.height > v.width : false,
       }));
 
-    // Prefer videos under 5 minutes for mobile viewing
+    // Prefer vertical videos (Shorts format 9:16)
     videos.sort((a, b) => {
-      const aDur = a.duration || 999;
-      const bDur = b.duration || 999;
-      const aGood = aDur <= 300 ? 0 : 1;
-      const bGood = bDur <= 300 ? 0 : 1;
-      return aGood - bGood;
+      if (a.isVertical && !b.isVertical) return -1;
+      if (!a.isVertical && b.isVertical) return 1;
+      return 0;
     });
 
     return videos;
@@ -74,8 +75,8 @@ export async function downloadVideo(videoId) {
   try {
     await execFileAsync('yt-dlp', [
       `https://www.youtube.com/watch?v=${videoId}`,
-      // Prefer vertical/mobile format, fallback to 720p
-      '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
+      // Best quality MP4
+      '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
       '--merge-output-format', 'mp4',
       '-o', outputTemplate,
       '--no-playlist',
