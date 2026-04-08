@@ -6,81 +6,39 @@
   top: 738px;
   z-index: 10;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* ─── Story navigation (centered) ─── */
-.story-nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.nav-arrow {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-icon-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
   background: none;
   border: none;
-  cursor: pointer;
   border-radius: 50%;
+  cursor: pointer;
   padding: 0;
 }
 
-.nav-arrow:disabled {
+.bar-icon-btn:disabled {
   opacity: 0.25;
   cursor: default;
 }
 
-.next-story-btn {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4px 12px;
-  height: 28px;
-  border: 1px solid var(--separator);
-  border-radius: var(--r-pill);
-  background: none;
-  cursor: pointer;
-}
-
-.next-story-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.next-story-label {
+.bar-counter {
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 13px;
   color: #fff;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  min-width: 40px;
+  text-align: center;
 }
 
-/* ─── Icon buttons ─── */
-.icon-btn {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 8px;
-  width: 40px;
-  height: 40px;
-  background: none;
-  border: none;
-  border-radius: var(--r-pill);
-  cursor: pointer;
-}
-
-.icon-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-/* Refresh spin animation */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
