@@ -1,16 +1,23 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 let client = null;
 
 function getClient() {
   if (!client) {
-    client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
+    const apiKey = process.env.OPENAI_API_KEY;
+    const baseURL = process.env.OPENAI_BASE_URL;
+
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+
+    client = new OpenAI({ apiKey, baseURL });
   }
   return client;
 }
 
 /**
- * Generate full card content for a news story using Claude
+ * Generate full card content for a news story using OpenAI-compatible API (GenSpark proxy)
  */
 export async function generateStoryCards(article) {
   const prompt = `You are a news story card generator for a mobile news app. Given a news article, generate structured JSON content for multiple story cards.
@@ -92,18 +99,22 @@ IMPORTANT:
 - All text should be factual based on the article content
 - Return ONLY valid JSON, no markdown fences`;
 
-  const response = await getClient().messages.create({
-    model: 'claude-sonnet-4-20250514',
+  const response = await getClient().chat.completions.create({
+    model: process.env.LLM_MODEL || '[L]gemini-3.1-pro-preview',
     max_tokens: 4000,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [
+      { role: 'system', content: 'You are a structured JSON generator. Always return valid JSON only, no markdown fences or extra text.' },
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.7,
   });
 
-  const text = response.content[0].text;
+  const text = response.choices[0].message.content;
 
   // Extract JSON from response (handle possible markdown fencing)
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    throw new Error('Claude did not return valid JSON');
+    throw new Error('LLM did not return valid JSON');
   }
 
   return JSON.parse(jsonMatch[0]);
