@@ -5,11 +5,11 @@ const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
 export function useStories() {
   const [stories, setStories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchStories()
-    // Poll every 5 minutes in case server just finished fetching
     const interval = setInterval(fetchStories, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
@@ -30,5 +30,22 @@ export function useStories() {
     }
   }
 
-  return { stories, loading, error }
+  async function refresh() {
+    setRefreshing(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/stories/fetch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 10 }),
+      })
+      await res.json()
+      await fetchStories()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  return { stories, loading, refreshing, error, refresh }
 }

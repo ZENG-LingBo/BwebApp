@@ -10,57 +10,58 @@
   align-items: center;
 }
 
-.bottom-bar-left {
+/* ─── Story navigation (centered) ─── */
+.story-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
-.ask-ai-label {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 20px;
-  color: #fff;
-}
-
-.ask-ai-icon {
-  width: 24px;
-  height: 24px;
+.nav-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.nav-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 .next-story-btn {
   display: flex;
-  flex-direction: row;
   justify-content: center;
   align-items: center;
-  padding: 4px 8px;
-  min-width: 80px;
-  height: 32px;
+  padding: 4px 12px;
+  height: 28px;
   border: 1px solid var(--separator);
   border-radius: var(--r-pill);
   background: none;
   cursor: pointer;
-  gap: 4px;
+}
+
+.next-story-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .next-story-label {
   font-family: var(--font-body);
-  font-weight: 400;
+  font-weight: 600;
   font-size: 12px;
   line-height: 16px;
   color: #fff;
+  letter-spacing: 0.5px;
 }
 
-.bottom-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
+/* ─── Icon buttons ─── */
 .icon-btn {
   display: flex;
   justify-content: center;
@@ -72,4 +73,18 @@
   border: none;
   border-radius: var(--r-pill);
   cursor: pointer;
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Refresh spin animation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
 }

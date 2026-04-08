@@ -23,7 +23,6 @@ function StoryView({ story, scrollRef }) {
     const container = scrollRef.current
     if (!container) return
 
-    // Scroll to top when story changes
     container.scrollTop = 0
 
     const observer = new IntersectionObserver(
@@ -83,7 +82,7 @@ function WaitingScreen({ loading }) {
 }
 
 function App() {
-  const { stories, loading } = useStories()
+  const { stories, loading, refreshing, refresh } = useStories()
   const [currentStoryIdx, setCurrentStoryIdx] = useState(0)
   const scrollRef = useRef(null)
 
@@ -126,32 +125,13 @@ function App() {
 
       <BottomBar
         onNext={handleNextStory}
+        onPrev={handlePrevStory}
+        onRefresh={refresh}
         storyCount={stories.length}
         currentIdx={currentStoryIdx}
         hasStories={stories.length > 0}
+        refreshing={refreshing}
       />
-
-      {stories.length > 1 && (
-        <div className="story-counter">
-          <button
-            className="story-nav-btn"
-            onClick={handlePrevStory}
-            disabled={currentStoryIdx === 0}
-          >
-            &lsaquo;
-          </button>
-          <span className="story-counter-text">
-            {currentStoryIdx + 1} / {stories.length}
-          </span>
-          <button
-            className="story-nav-btn"
-            onClick={handleNextStory}
-            disabled={currentStoryIdx === stories.length - 1}
-          >
-            &rsaquo;
-          </button>
-        </div>
-      )}
 
       <div className="home-indicator">
         <div className="home-indicator-bar" />
