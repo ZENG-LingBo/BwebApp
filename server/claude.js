@@ -1,8 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({
-  apiKey: process.env.CLAUDE_API_KEY,
-});
+let client = null;
+
+function getClient() {
+  if (!client) {
+    client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
+  }
+  return client;
+}
 
 /**
  * Generate full card content for a news story using Claude
@@ -87,7 +92,7 @@ IMPORTANT:
 - All text should be factual based on the article content
 - Return ONLY valid JSON, no markdown fences`;
 
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
