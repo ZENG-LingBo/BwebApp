@@ -14,20 +14,19 @@ if (!fs.existsSync(VIDEOS_DIR)) {
 }
 
 /**
- * Search YouTube for Shorts / short news clips
- * Prioritizes videos under 60 seconds (Shorts format)
+ * Search YouTube for short-form news videos (YouTube Shorts format)
+ * These can be any duration — "Short" refers to the vertical format, not length
  */
 export async function searchYouTube(query, maxResults = 5) {
   try {
-    // First try: search specifically for Shorts
     const { stdout } = await execFileAsync('yt-dlp', [
-      `ytsearch${maxResults}:${query} #shorts news`,
+      `ytsearch${maxResults}:${query} news`,
       '--dump-json',
       '--no-download',
       '--flat-playlist',
     ], { timeout: 45000, maxBuffer: 1024 * 1024 * 10 });
 
-    let videos = stdout.trim().split('\n')
+    const videos = stdout.trim().split('\n')
       .filter(line => line.trim())
       .map(line => {
         try { return JSON.parse(line); }
@@ -40,14 +39,15 @@ export async function searchYouTube(query, maxResults = 5) {
         duration: v.duration,
         thumbnail: v.thumbnail || v.thumbnails?.[0]?.url,
         url: v.url || v.webpage_url || `https://www.youtube.com/watch?v=${v.id}`,
-        isShort: (v.duration && v.duration <= 60) || v.url?.includes('/shorts/'),
       }));
 
-    // Sort: Shorts first (<60s), then by shortest duration
+    // Prefer videos under 5 minutes for mobile viewing
     videos.sort((a, b) => {
-      if (a.isShort && !b.isShort) return -1;
-      if (!a.isShort && b.isShort) return 1;
-      return (a.duration || 999) - (b.duration || 999);
+      const aDur = a.duration || 999;
+      const bDur = b.duration || 999;
+      const aGood = aDur <= 300 ? 0 : 1;
+      const bGood = bDur <= 300 ? 0 : 1;
+      return aGood - bGood;
     });
 
     return videos;
@@ -79,7 +79,7 @@ export async function downloadVideo(videoId) {
       '--merge-output-format', 'mp4',
       '-o', outputTemplate,
       '--no-playlist',
-      '--max-filesize', '30m',
+      '--max-filesize', '100m',
     ], { timeout: 120000 });
 
     if (fs.existsSync(expectedFile)) {
@@ -114,7 +114,7 @@ export async function downloadVideo(videoId) {
  * Always downloads — no embed fallback
  */
 export async function getVideoForStory(searchQuery) {
-  console.log(`  Searching YouTube Shorts: "${searchQuery}"`);
+  console.log(`  Searching YouTube: "${searchQuery}"`);
   const videos = await searchYouTube(searchQuery);
 
   if (videos.length === 0) {
@@ -123,7 +123,7 @@ export async function getVideoForStory(searchQuery) {
   }
 
   const best = videos[0];
-  console.log(`  Found: "${best.title}" (${best.duration}s${best.isShort ? ' - Short' : ''})`);
+  console.log(`  Found: "${best.title}" (${best.duration}s)`);
 
   // Always download the video
   console.log(`  Downloading ${best.id}...`);
