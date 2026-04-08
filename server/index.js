@@ -157,12 +157,12 @@ app.get('/{*path}', (req, res) => {
 
 // ─── CRON SCHEDULER ───────────────────────────────────────
 
-// Run daily at 6:00 AM
+// Run daily at 6:00 AM Hong Kong time (UTC+8)
 cron.schedule('0 6 * * *', async () => {
-  console.log('\n[CRON] Daily story fetch triggered');
+  console.log('\n[CRON] Daily story fetch triggered (6 AM HKT)');
   await runPipeline(10);
 }, {
-  timezone: 'UTC'
+  timezone: 'Asia/Hong_Kong'
 });
 
 // ─── PARSE HELPER ─────────────────────────────────────────
@@ -189,10 +189,26 @@ function parseStory(story) {
 
 // ─── START ────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n🚀 BwebApp server running on http://localhost:${PORT}`);
   console.log(`   API: http://localhost:${PORT}/api/status`);
   console.log(`   Stories: http://localhost:${PORT}/api/stories/today`);
-  console.log(`   Cron: Daily at 06:00 UTC`);
-  console.log(`   Manual fetch: POST /api/stories/fetch\n`);
+  console.log(`   Cron: Daily at 06:00 AM Hong Kong time\n`);
+
+  // Auto-fetch on startup if no stories exist for today
+  const todayCount = db.prepare(
+    "SELECT COUNT(*) as count FROM stories WHERE date(fetched_at) = date('now')"
+  ).get().count;
+
+  if (todayCount === 0) {
+    const totalCount = db.prepare('SELECT COUNT(*) as count FROM stories').get().count;
+    if (totalCount === 0) {
+      console.log('[STARTUP] No stories in database. Fetching 10 stories now...');
+      await runPipeline(10);
+    } else {
+      console.log(`[STARTUP] No stories today, but ${totalCount} from previous days. Next fetch at 6 AM HKT.`);
+    }
+  } else {
+    console.log(`[STARTUP] ${todayCount} stories already fetched today.`);
+  }
 });

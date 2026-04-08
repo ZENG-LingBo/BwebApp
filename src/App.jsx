@@ -64,32 +64,18 @@ function StoryView({ story }) {
   )
 }
 
-function LoadingScreen({ onFetch }) {
+function WaitingScreen({ loading }) {
   return (
     <div className="loading-screen">
       <div className="loading-content">
-        <div className="loading-spinner" />
-        <p className="loading-text">No stories yet</p>
-        <button className="fetch-btn" onClick={onFetch}>
-          Fetch Today's Stories
-        </button>
-        <p className="loading-hint">
-          This will fetch RSS feeds, generate summaries with AI, and find related videos.
-          Takes ~2 minutes.
+        <div className={`loading-spinner ${loading ? 'loading-spinner--active' : ''}`} />
+        <p className="loading-text">
+          {loading ? 'Loading stories...' : 'Stories update daily at 6 AM HKT'}
         </p>
-      </div>
-    </div>
-  )
-}
-
-function FetchingScreen() {
-  return (
-    <div className="loading-screen">
-      <div className="loading-content">
-        <div className="loading-spinner loading-spinner--active" />
-        <p className="loading-text">Generating stories...</p>
         <p className="loading-hint">
-          Fetching RSS feeds, ranking stories, generating AI summaries, finding videos...
+          {loading
+            ? 'Fetching the latest stories...'
+            : 'The server automatically fetches 10 top stories from world news every morning. Check back soon.'}
         </p>
       </div>
     </div>
@@ -97,17 +83,10 @@ function FetchingScreen() {
 }
 
 function App() {
-  const { stories, loading, error, triggerFetch } = useStories()
+  const { stories, loading } = useStories()
   const [currentStoryIdx, setCurrentStoryIdx] = useState(0)
-  const [fetching, setFetching] = useState(false)
 
   const story = stories[currentStoryIdx]
-
-  async function handleFetch() {
-    setFetching(true)
-    await triggerFetch(10)
-    setFetching(false)
-  }
 
   function handleNextStory() {
     if (currentStoryIdx < stories.length - 1) {
@@ -138,10 +117,8 @@ function App() {
           />
           <StoryView story={story} />
         </>
-      ) : fetching ? (
-        <FetchingScreen />
       ) : (
-        <LoadingScreen onFetch={handleFetch} />
+        <WaitingScreen loading={loading} />
       )}
 
       <div className="base-gradient" />
@@ -153,7 +130,6 @@ function App() {
         hasStories={stories.length > 0}
       />
 
-      {/* Story counter */}
       {stories.length > 1 && (
         <div className="story-counter">
           <button

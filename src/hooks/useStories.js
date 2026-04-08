@@ -9,6 +9,9 @@ export function useStories() {
 
   useEffect(() => {
     fetchStories()
+    // Poll every 5 minutes in case server just finished fetching
+    const interval = setInterval(fetchStories, 5 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
 
   async function fetchStories() {
@@ -27,26 +30,5 @@ export function useStories() {
     }
   }
 
-  async function triggerFetch(count = 10) {
-    setLoading(true)
-    try {
-      const res = await fetch(`${API_BASE}/api/stories/fetch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        await fetchStories()
-      }
-      return data
-    } catch (err) {
-      setError(err.message)
-      return { success: false, error: err.message }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return { stories, loading, error, refetch: fetchStories, triggerFetch }
+  return { stories, loading, error }
 }
