@@ -32,11 +32,38 @@ function SectionTitle({ children }) {
   return <div className="section-title">{children}</div>
 }
 
-/* ─── Hero Card ─── */
+/* ─── Hero Card (video featured at top, headline over it) ─── */
 
 export function DynamicHeroCard({ story }) {
+  const hasVideo = story.video_embed_url || story.video_filename
+
   return (
     <div className="card hero-card" data-card-index="0">
+      {/* Video as hero background */}
+      {hasVideo && (
+        <div className="hero-video-container">
+          {story.video_embed_url ? (
+            <iframe
+              src={story.video_embed_url}
+              title={story.video_title || 'Related video'}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="hero-video-iframe"
+            />
+          ) : story.video_filename ? (
+            <video
+              controls
+              className="hero-video-player"
+              poster={story.video_thumbnail}
+            >
+              <source src={`/api/videos/${story.video_filename}`} type="video/mp4" />
+            </video>
+          ) : null}
+        </div>
+      )}
+
+      {/* Headline text below video */}
       <div className="hero-content">
         <div className="hero-text-group">
           <h1 className="hero-headline">{story.headline}</h1>
@@ -51,41 +78,6 @@ export function DynamicHeroCard({ story }) {
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-/* ─── Video Card ─── */
-
-export function VideoCard({ story }) {
-  if (!story.video_embed_url && !story.video_filename) return null
-
-  return (
-    <div className="card video-card" data-card-index="1">
-      <SectionTitle>WATCH</SectionTitle>
-      <div className="video-container">
-        {story.video_embed_url ? (
-          <iframe
-            src={story.video_embed_url}
-            title={story.video_title || 'Related video'}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="video-iframe"
-          />
-        ) : story.video_filename ? (
-          <video
-            controls
-            className="video-player"
-            poster={story.video_thumbnail}
-          >
-            <source src={`/api/videos/${story.video_filename}`} type="video/mp4" />
-          </video>
-        ) : null}
-      </div>
-      {story.video_title && (
-        <p className="video-title-text">{story.video_title}</p>
-      )}
     </div>
   )
 }

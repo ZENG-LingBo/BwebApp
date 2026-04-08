@@ -6,7 +6,6 @@ import Sidebar from './components/Sidebar'
 import BottomBar from './components/BottomBar'
 import {
   DynamicHeroCard,
-  VideoCard,
   DynamicSummaryCard,
   DynamicKnownFactsCard,
   DynamicTimelineCard,
@@ -17,13 +16,15 @@ import {
 } from './components/cards/DynamicCards'
 import { useStories } from './hooks/useStories'
 
-function StoryView({ story }) {
+function StoryView({ story, scrollRef }) {
   const [activeStep, setActiveStep] = useState(0)
-  const scrollRef = useRef(null)
 
   useEffect(() => {
     const container = scrollRef.current
     if (!container) return
+
+    // Scroll to top when story changes
+    container.scrollTop = 0
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -42,14 +43,13 @@ function StoryView({ story }) {
     cards.forEach((card) => observer.observe(card))
 
     return () => observer.disconnect()
-  }, [story])
+  }, [story, scrollRef])
 
   return (
     <>
       <div className="scroll-container" ref={scrollRef}>
         <div className="card-stack">
           <DynamicHeroCard story={story} />
-          <VideoCard story={story} />
           <DynamicSummaryCard story={story} />
           <DynamicKnownFactsCard story={story} />
           <DynamicTimelineCard story={story} />
@@ -85,6 +85,7 @@ function WaitingScreen({ loading }) {
 function App() {
   const { stories, loading } = useStories()
   const [currentStoryIdx, setCurrentStoryIdx] = useState(0)
+  const scrollRef = useRef(null)
 
   const story = stories[currentStoryIdx]
 
@@ -115,7 +116,7 @@ function App() {
             date={story.story_date}
             statusLabel={story.status_label}
           />
-          <StoryView story={story} />
+          <StoryView story={story} scrollRef={scrollRef} />
         </>
       ) : (
         <WaitingScreen loading={loading} />

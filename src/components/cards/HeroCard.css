@@ -4,7 +4,30 @@
   align-items: center;
   gap: 16px;
   width: var(--card-width);
-  height: 144px;
+  min-height: 144px;
+  height: auto;
+}
+
+/* ─── Hero Video (featured at top) ─── */
+.hero-video-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  margin-bottom: 4px;
+}
+
+.hero-video-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.hero-video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .hero-content {
