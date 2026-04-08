@@ -8,15 +8,18 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install Node dependencies
+# Install ALL dependencies (need vite for build)
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy source
 COPY . .
 
 # Build frontend
 RUN npm run build
+
+# Remove dev dependencies after build
+RUN npm prune --omit=dev
 
 # Create data directories
 RUN mkdir -p server/data server/videos
