@@ -1,19 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk';
-
-let client = null;
-
-function getClient() {
-  if (!client) {
-    client = new Anthropic({
-      apiKey: process.env.CLAUDE_API_KEY,
-      baseURL: 'https://api.anthropic.com',
-    });
-  }
-  return client;
-}
+const API_BASE = process.env.LLM_API_BASE || 'https://new.lemonapi.site/v1';
+const API_KEY = process.env.LLM_API_KEY || process.env.CLAUDE_API_KEY;
+const MODEL = process.env.LLM_MODEL || 'gemini-3.1-pro-preview';
 
 /**
- * Generate full card content for a news story using Claude
+ * Generate full card content for a news story using LLM API (OpenAI-compatible)
  */
 export async function generateStoryCards(article) {
   const prompt = `You are a news story card generator for a mobile news app. Given a news article, generate structured JSON content for multiple story cards.
@@ -95,18 +85,35 @@ IMPORTANT:
 - All text should be factual based on the article content
 - Return ONLY valid JSON, no markdown fences`;
 
-  const response = await getClient().messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 4000,
-    messages: [{ role: 'user', content: prompt }],
+  const response = await fetch(`${API_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }],
+    }),
   });
 
-  const text = response.content[0].text;
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`LLM API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+
+  if (!text) {
+    throw new Error('LLM returned empty response');
+  }
 
   // Extract JSON from response (handle possible markdown fencing)
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    throw new Error('Claude did not return valid JSON');
+    throw new Error('LLM did not return valid JSON');
   }
 
   return JSON.parse(jsonMatch[0]);
