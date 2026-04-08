@@ -14,19 +14,20 @@ if (!fs.existsSync(VIDEOS_DIR)) {
 }
 
 /**
- * Search YouTube for a short news video and return video info
- * Uses yt-dlp's search feature - no API key needed
+ * Search YouTube for Shorts / short news clips
+ * Prioritizes videos under 60 seconds (Shorts format)
  */
-export async function searchYouTube(query, maxResults = 3) {
+export async function searchYouTube(query, maxResults = 5) {
   try {
+    // First try: search specifically for Shorts
     const { stdout } = await execFileAsync('yt-dlp', [
-      `ytsearch${maxResults}:${query} news short`,
+      `ytsearch${maxResults}:${query} #shorts news`,
       '--dump-json',
       '--no-download',
       '--flat-playlist',
-    ], { timeout: 30000, maxBuffer: 1024 * 1024 * 5 });
+    ], { timeout: 45000, maxBuffer: 1024 * 1024 * 10 });
 
-    const videos = stdout.trim().split('\n')
+    let videos = stdout.trim().split('\n')
       .filter(line => line.trim())
       .map(line => {
         try { return JSON.parse(line); }
@@ -39,17 +40,14 @@ export async function searchYouTube(query, maxResults = 3) {
         duration: v.duration,
         thumbnail: v.thumbnail || v.thumbnails?.[0]?.url,
         url: v.url || v.webpage_url || `https://www.youtube.com/watch?v=${v.id}`,
-        embedUrl: `https://www.youtube.com/embed/${v.id}`,
+        isShort: (v.duration && v.duration <= 60) || v.url?.includes('/shorts/'),
       }));
 
-    // Prefer shorter videos (under 3 min) for mobile cards
+    // Sort: Shorts first (<60s), then by shortest duration
     videos.sort((a, b) => {
-      const aDur = a.duration || 999;
-      const bDur = b.duration || 999;
-      // Prefer videos between 30s and 180s
-      const aScore = (aDur >= 30 && aDur <= 180) ? 0 : 1;
-      const bScore = (bDur >= 30 && bDur <= 180) ? 0 : 1;
-      return aScore - bScore || aDur - bDur;
+      if (a.isShort && !b.isShort) return -1;
+      if (!a.isShort && b.isShort) return 1;
+      return (a.duration || 999) - (b.duration || 999);
     });
 
     return videos;
@@ -60,7 +58,7 @@ export async function searchYouTube(query, maxResults = 3) {
 }
 
 /**
- * Download a YouTube video as MP4
+ * Download a YouTube video as MP4 (optimized for mobile vertical/short format)
  * Returns the local filename
  */
 export async function downloadVideo(videoId) {
@@ -76,22 +74,21 @@ export async function downloadVideo(videoId) {
   try {
     await execFileAsync('yt-dlp', [
       `https://www.youtube.com/watch?v=${videoId}`,
-      '-f', 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
+      // Prefer vertical/mobile format, fallback to 720p
+      '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
       '--merge-output-format', 'mp4',
       '-o', outputTemplate,
       '--no-playlist',
-      '--max-filesize', '50m',
+      '--max-filesize', '30m',
     ], { timeout: 120000 });
 
-    // Check if file exists (might have different extension)
     if (fs.existsSync(expectedFile)) {
       return `${videoId}.mp4`;
     }
 
-    // Try to find any file with this video ID
+    // Find any file with this ID and convert if needed
     const files = fs.readdirSync(VIDEOS_DIR).filter(f => f.startsWith(videoId));
     if (files.length > 0) {
-      // Convert to mp4 with ffmpeg if needed
       const srcFile = path.join(VIDEOS_DIR, files[0]);
       if (!files[0].endsWith('.mp4')) {
         await execFileAsync('ffmpeg', [
@@ -113,10 +110,11 @@ export async function downloadVideo(videoId) {
 }
 
 /**
- * Search and download the best matching video for a story
+ * Search and download the best matching short video for a story
+ * Always downloads — no embed fallback
  */
 export async function getVideoForStory(searchQuery) {
-  console.log(`  Searching YouTube: "${searchQuery}"`);
+  console.log(`  Searching YouTube Shorts: "${searchQuery}"`);
   const videos = await searchYouTube(searchQuery);
 
   if (videos.length === 0) {
@@ -125,17 +123,22 @@ export async function getVideoForStory(searchQuery) {
   }
 
   const best = videos[0];
-  console.log(`  Found: "${best.title}" (${best.duration}s)`);
+  console.log(`  Found: "${best.title}" (${best.duration}s${best.isShort ? ' - Short' : ''})`);
 
-  // Download the video
+  // Always download the video
   console.log(`  Downloading ${best.id}...`);
   const filename = await downloadVideo(best.id);
+
+  if (!filename) {
+    console.log('  Download failed, skipping video');
+    return null;
+  }
 
   return {
     videoId: best.id,
     videoTitle: best.title,
     videoFilename: filename,
     videoThumbnail: best.thumbnail,
-    videoEmbedUrl: best.embedUrl,
+    videoEmbedUrl: null, // No embed — always use downloaded file
   };
 }
