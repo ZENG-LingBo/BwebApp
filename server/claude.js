@@ -4,7 +4,10 @@ let client = null;
 
 function getClient() {
   if (!client) {
-    client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY });
+    client = new Anthropic({
+      apiKey: process.env.CLAUDE_API_KEY,
+      baseURL: 'https://api.anthropic.com',
+    });
   }
   return client;
 }
