@@ -1,23 +1,9 @@
-import OpenAI from 'openai';
-
-let client = null;
-
-function getClient() {
-  if (!client) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    const baseURL = process.env.OPENAI_BASE_URL;
-
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is not set');
-    }
-
-    client = new OpenAI({ apiKey, baseURL });
-  }
-  return client;
-}
+const API_BASE = process.env.LLM_API_BASE || 'https://new.lemonapi.site/v1';
+const API_KEY = process.env.LLM_API_KEY || process.env.CLAUDE_API_KEY;
+const MODEL = process.env.LLM_MODEL || 'gemini-3.1-pro-preview';
 
 /**
- * Generate full card content for a news story using OpenAI-compatible API (GenSpark proxy)
+ * Generate full card content for a news story using LLM API (OpenAI-compatible)
  */
 export async function generateStoryCards(article) {
   const prompt = `You are a news story card generator for a mobile news app. Given a news article, generate structured JSON content for multiple story cards.
@@ -99,17 +85,30 @@ IMPORTANT:
 - All text should be factual based on the article content
 - Return ONLY valid JSON, no markdown fences`;
 
-  const response = await getClient().chat.completions.create({
-    model: process.env.LLM_MODEL || '[L]gemini-3.1-pro-preview',
-    max_tokens: 4000,
-    messages: [
-      { role: 'system', content: 'You are a structured JSON generator. Always return valid JSON only, no markdown fences or extra text.' },
-      { role: 'user', content: prompt }
-    ],
-    temperature: 0.7,
+  const response = await fetch(`${API_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }],
+    }),
   });
 
-  const text = response.choices[0].message.content;
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`LLM API error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+
+  if (!text) {
+    throw new Error('LLM returned empty response');
+  }
 
   // Extract JSON from response (handle possible markdown fencing)
   const jsonMatch = text.match(/\{[\s\S]*\}/);

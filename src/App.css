@@ -133,9 +133,16 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 554px var(--content-left) 120px;
+  padding: 0 var(--content-left) 120px;
   gap: var(--card-gap);
   width: 375px;
+}
+
+/* Hero card breaks out of padding to go full-width */
+.card-stack > .hero-card {
+  width: 375px;
+  margin-left: calc(-1 * var(--content-left));
+  padding: 0;
 }
 
 /* ── Card base ── */

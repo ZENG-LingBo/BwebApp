@@ -7,12 +7,13 @@ const parser = new Parser({
 
 // Top news agency RSS feeds - free, no auth needed
 const FEEDS = [
+  { name: 'Reuters World',     url: 'https://feeds.reuters.com/reuters/worldNews' },
+  { name: 'Reuters Top',       url: 'https://feeds.reuters.com/reuters/topNews' },
+  { name: 'AP Top News',       url: 'https://rss.app/feeds/v1.1/ts8K1FMPOcM0GQPW.xml' },
   { name: 'BBC World',         url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
   { name: 'Al Jazeera',        url: 'https://www.aljazeera.com/xml/rss/all.xml' },
   { name: 'NPR News',          url: 'https://feeds.npr.org/1001/rss.xml' },
   { name: 'Guardian World',    url: 'https://www.theguardian.com/world/rss' },
-  { name: 'NYT World',         url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml' },
-  { name: 'CNBC World',        url: 'https://www.cnbc.com/id/100727362/device/rss/rss.html' },
 ];
 
 /**
