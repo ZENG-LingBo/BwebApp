@@ -32,30 +32,38 @@ function SectionTitle({ children }) {
   return <div className="section-title">{children}</div>
 }
 
-/* ─── Hero Card — fullscreen autoplay video background with text overlay ─── */
+/* ─── Hero Card (video featured at top, headline over it) ─── */
 
 export function DynamicHeroCard({ story }) {
-  const hasVideo = story.video_filename
+  const hasVideo = story.video_embed_url || story.video_filename
 
   return (
     <div className="card hero-card" data-card-index="0">
-      {/* Autoplay video background */}
+      {/* Video as hero background */}
       {hasVideo && (
-        <video
-          className="hero-bg-video"
-          src={`/api/videos/${story.video_filename}`}
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster={story.video_thumbnail || undefined}
-        />
+        <div className="hero-video-container">
+          {story.video_embed_url ? (
+            <iframe
+              src={story.video_embed_url}
+              title={story.video_title || 'Related video'}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="hero-video-iframe"
+            />
+          ) : story.video_filename ? (
+            <video
+              controls
+              className="hero-video-player"
+              poster={story.video_thumbnail}
+            >
+              <source src={`/api/videos/${story.video_filename}`} type="video/mp4" />
+            </video>
+          ) : null}
+        </div>
       )}
 
-      {/* Dark overlay for text readability */}
-      <div className="hero-overlay" />
-
-      {/* Text content on top of video */}
+      {/* Headline text below video */}
       <div className="hero-content">
         <div className="hero-text-group">
           <h1 className="hero-headline">{story.headline}</h1>

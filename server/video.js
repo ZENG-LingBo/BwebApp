@@ -14,17 +14,17 @@ if (!fs.existsSync(VIDEOS_DIR)) {
 }
 
 /**
- * Search YouTube for short-form news videos (YouTube Shorts format)
- * These can be any duration — "Short" refers to the vertical format, not length
+ * Search YouTube for a short news video and return video info
+ * Uses yt-dlp's search feature - no API key needed
  */
-export async function searchYouTube(query, maxResults = 5) {
+export async function searchYouTube(query, maxResults = 3) {
   try {
-    // Search specifically for YouTube Shorts (vertical 9:16 format)
     const { stdout } = await execFileAsync('yt-dlp', [
-      `ytsearch${maxResults}:${query} shorts`,
+      `ytsearch${maxResults}:${query} news short`,
       '--dump-json',
       '--no-download',
-    ], { timeout: 60000, maxBuffer: 1024 * 1024 * 10 });
+      '--flat-playlist',
+    ], { timeout: 30000, maxBuffer: 1024 * 1024 * 5 });
 
     const videos = stdout.trim().split('\n')
       .filter(line => line.trim())
@@ -37,18 +37,19 @@ export async function searchYouTube(query, maxResults = 5) {
         id: v.id,
         title: v.title,
         duration: v.duration,
-        width: v.width,
-        height: v.height,
         thumbnail: v.thumbnail || v.thumbnails?.[0]?.url,
         url: v.url || v.webpage_url || `https://www.youtube.com/watch?v=${v.id}`,
-        isVertical: (v.height && v.width) ? v.height > v.width : false,
+        embedUrl: `https://www.youtube.com/embed/${v.id}`,
       }));
 
-    // Prefer vertical videos (Shorts format 9:16)
+    // Prefer shorter videos (under 3 min) for mobile cards
     videos.sort((a, b) => {
-      if (a.isVertical && !b.isVertical) return -1;
-      if (!a.isVertical && b.isVertical) return 1;
-      return 0;
+      const aDur = a.duration || 999;
+      const bDur = b.duration || 999;
+      // Prefer videos between 30s and 180s
+      const aScore = (aDur >= 30 && aDur <= 180) ? 0 : 1;
+      const bScore = (bDur >= 30 && bDur <= 180) ? 0 : 1;
+      return aScore - bScore || aDur - bDur;
     });
 
     return videos;
@@ -59,7 +60,7 @@ export async function searchYouTube(query, maxResults = 5) {
 }
 
 /**
- * Download a YouTube video as MP4 (optimized for mobile vertical/short format)
+ * Download a YouTube video as MP4
  * Returns the local filename
  */
 export async function downloadVideo(videoId) {
@@ -75,21 +76,22 @@ export async function downloadVideo(videoId) {
   try {
     await execFileAsync('yt-dlp', [
       `https://www.youtube.com/watch?v=${videoId}`,
-      // Best quality MP4
-      '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+      '-f', 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
       '--merge-output-format', 'mp4',
       '-o', outputTemplate,
       '--no-playlist',
-      '--max-filesize', '100m',
+      '--max-filesize', '50m',
     ], { timeout: 120000 });
 
+    // Check if file exists (might have different extension)
     if (fs.existsSync(expectedFile)) {
       return `${videoId}.mp4`;
     }
 
-    // Find any file with this ID and convert if needed
+    // Try to find any file with this video ID
     const files = fs.readdirSync(VIDEOS_DIR).filter(f => f.startsWith(videoId));
     if (files.length > 0) {
+      // Convert to mp4 with ffmpeg if needed
       const srcFile = path.join(VIDEOS_DIR, files[0]);
       if (!files[0].endsWith('.mp4')) {
         await execFileAsync('ffmpeg', [
@@ -111,8 +113,7 @@ export async function downloadVideo(videoId) {
 }
 
 /**
- * Search and download the best matching short video for a story
- * Always downloads — no embed fallback
+ * Search and download the best matching video for a story
  */
 export async function getVideoForStory(searchQuery) {
   console.log(`  Searching YouTube: "${searchQuery}"`);
@@ -126,20 +127,15 @@ export async function getVideoForStory(searchQuery) {
   const best = videos[0];
   console.log(`  Found: "${best.title}" (${best.duration}s)`);
 
-  // Always download the video
+  // Download the video
   console.log(`  Downloading ${best.id}...`);
   const filename = await downloadVideo(best.id);
-
-  if (!filename) {
-    console.log('  Download failed, skipping video');
-    return null;
-  }
 
   return {
     videoId: best.id,
     videoTitle: best.title,
     videoFilename: filename,
     videoThumbnail: best.thumbnail,
-    videoEmbedUrl: null, // No embed — always use downloaded file
+    videoEmbedUrl: best.embedUrl,
   };
 }
