@@ -15,8 +15,10 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
-// Serve downloaded videos
-app.use('/api/videos', express.static(path.join(__dirname, 'videos')));
+// Serve downloaded videos. Same VIDEOS_DIR resolution as server/video.js
+// so a Railway volume mount at an alternate path works transparently.
+const VIDEOS_DIR = process.env.VIDEOS_DIR || path.join(__dirname, 'videos');
+app.use('/api/videos', express.static(VIDEOS_DIR));
 
 // Serve the built frontend
 app.use(express.static(path.join(__dirname, '..', 'dist')));

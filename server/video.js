@@ -6,7 +6,11 @@ import { fileURLToPath } from 'url';
 
 const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const VIDEOS_DIR = path.join(__dirname, 'videos');
+
+// Videos dir is configurable so Railway (and other hosts) can point it at a
+// mounted persistent volume. When set, server/index.js must also serve
+// `/api/videos/*` from the same path.
+const VIDEOS_DIR = process.env.VIDEOS_DIR || path.join(__dirname, 'videos');
 
 // Ensure videos directory exists
 if (!fs.existsSync(VIDEOS_DIR)) {

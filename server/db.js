@@ -1,9 +1,19 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database(path.join(__dirname, 'data', 'stories.db'));
+
+// DB path is configurable so Railway (and other hosts) can point it at a
+// mounted persistent volume. Default keeps dev workflow unchanged.
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'stories.db');
+
+// Ensure the parent dir exists — Git doesn't track empty dirs, so fresh
+// deploys may not have `server/data/` even if `.gitignore` references it.
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+
+const db = new Database(DB_PATH);
 
 db.pragma('journal_mode = WAL');
 

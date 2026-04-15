@@ -1,0 +1,21 @@
+# Nixpacks build config for Railway.
+#
+# The story pipeline shells out to `yt-dlp` (video metadata + download) and
+# `ffmpeg` (audio/video merge). Railway's default Node image ships neither,
+# so we pull them in via Nix.
+#
+# `python311` is the yt-dlp runtime dependency. `gcc` + `gnumake` +
+# `python3` give better-sqlite3's native build a fighting chance on the
+# off-chance its prebuilt binary isn't available for the platform.
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "yt-dlp", "ffmpeg", "python311", "gcc", "gnumake"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm run server"
