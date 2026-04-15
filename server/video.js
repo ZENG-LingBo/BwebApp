@@ -14,46 +14,66 @@ if (!fs.existsSync(VIDEOS_DIR)) {
 }
 
 /**
- * Search YouTube for short-form news videos (YouTube Shorts format)
- * These can be any duration — "Short" refers to the vertical format, not length
+ * Search YouTube specifically for genuine Shorts (vertical 9:16 content).
+ *
+ * IMPORTANT: `yt-dlp ytsearchN:...` hits YouTube's search API which ranks
+ * long-form videos above Shorts for most news queries. Even with `#shorts`
+ * in the query, a 30-candidate search returned 0 true Shorts for "Trump
+ * Powell Fed" — all horizontal news clips.
+ *
+ * Instead we hit YouTube's search results page URL with `sp=EgIYAQ%253D%253D`
+ * (the Duration=Short UI filter), then keep only entries whose URL contains
+ * `/shorts/` — YouTube's authoritative signal that a video lives in the
+ * Shorts shelf (guaranteed 9:16). Empirically this returns ~20/30 true
+ * Shorts for news queries, including content the ytsearch API missed.
+ *
+ * `--flat-playlist` is much faster than resolving each entry's full metadata
+ * and is sufficient here — we don't need width/height because `/shorts/`
+ * already guarantees vertical.
  */
 export async function searchYouTube(query, maxResults = 5) {
+  const SP_SHORT_DURATION = 'EgIYAQ%253D%253D';   // YouTube UI: Duration = Short (<4min)
+  const CANDIDATES = 40;
+
+  const searchUrl =
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}` +
+    `&sp=${SP_SHORT_DURATION}`;
+
   try {
-    // Search specifically for YouTube Shorts (vertical 9:16 format)
     const { stdout } = await execFileAsync('yt-dlp', [
-      `ytsearch${maxResults}:${query} shorts`,
+      searchUrl,
+      '--flat-playlist',
       '--dump-json',
       '--no-download',
+      '--playlist-items', `1:${CANDIDATES}`,
     ], { timeout: 60000, maxBuffer: 1024 * 1024 * 10 });
 
     const videos = stdout.trim().split('\n')
-      .filter(line => line.trim())
+      .filter(line => line.trim().startsWith('{'))
       .map(line => {
         try { return JSON.parse(line); }
         catch { return null; }
       })
       .filter(Boolean)
+      // Authoritative Shorts signal: URL path contains `/shorts/`.
+      .filter(v => (v.url || '').includes('/shorts/'))
       .map(v => ({
         id: v.id,
         title: v.title,
         duration: v.duration,
-        width: v.width,
-        height: v.height,
-        thumbnail: v.thumbnail || v.thumbnails?.[0]?.url,
-        url: v.url || v.webpage_url || `https://www.youtube.com/watch?v=${v.id}`,
-        isVertical: (v.height && v.width) ? v.height > v.width : false,
-      }));
-
-    // Prefer vertical videos (Shorts format 9:16)
-    videos.sort((a, b) => {
-      if (a.isVertical && !b.isVertical) return -1;
-      if (!a.isVertical && b.isVertical) return 1;
-      return 0;
-    });
+        // `/shorts/` URLs are always 9:16. yt-dlp in --flat-playlist mode
+        // doesn't populate width/height, so we fill in the guaranteed aspect.
+        width: v.width || 1080,
+        height: v.height || 1920,
+        thumbnail: v.thumbnails?.[0]?.url,
+        url: v.url,
+        aspectRatio: 1.78,
+      }))
+      .slice(0, maxResults);
 
     return videos;
   } catch (err) {
-    console.warn(`  YouTube search failed for "${query}": ${err.message}`);
+    console.warn(`  YouTube Shorts search failed for "${query}": ${err.message}`);
     return [];
   }
 }
@@ -111,20 +131,21 @@ export async function downloadVideo(videoId) {
 }
 
 /**
- * Search and download the best matching short video for a story
- * Always downloads — no embed fallback
+ * Search and download the best matching vertical short video for a story.
+ * Always downloads — no embed fallback. Returns null if no Shorts-format
+ * video matches (caller falls back to gradient hero).
  */
 export async function getVideoForStory(searchQuery) {
-  console.log(`  Searching YouTube: "${searchQuery}"`);
+  console.log(`  Searching YouTube Shorts shelf (9:16 guaranteed): "${searchQuery}"`);
   const videos = await searchYouTube(searchQuery);
 
   if (videos.length === 0) {
-    console.log('  No videos found');
+    console.log('  No Shorts found in the Shorts shelf for this query');
     return null;
   }
 
   const best = videos[0];
-  console.log(`  Found: "${best.title}" (${best.duration}s)`);
+  console.log(`  Found Short: "${best.title}" (${best.duration}s) ${best.url}`);
 
   // Always download the video
   console.log(`  Downloading ${best.id}...`);

@@ -8,9 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node server/index.js",
-    "server:dev": "node --watch server/index.js",
-    "fetch": "node -e \"import('./server/pipeline.js').then(m => m.runPipeline(10))\"",
+    "server": "node --env-file-if-exists=.env server/index.js",
+    "server:dev": "node --watch --env-file-if-exists=.env server/index.js",
+    "fetch": "node --env-file-if-exists=.env -e \"import('./server/pipeline.js').then(m => m.runPipeline(10))\"",
     "start": "npm run build && npm run server"
   },
   "dependencies": {

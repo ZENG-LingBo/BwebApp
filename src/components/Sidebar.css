@@ -40,11 +40,17 @@
   justify-content: center;
   color: rgba(255, 255, 255, 0.6);
   flex-shrink: 0;
+  transition: width 0.2s ease, height 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Active step — larger pure-white circle with dark icon per Figma screenshot.
+   Inactive stays as a 32x32 dark-overlay pill. */
 .sidebar-icon--active {
+  width: 40px;
+  height: 40px;
   background: #FFFFFF;
-  color: #272A27;
+  color: var(--bg-secondary);
+  box-shadow: var(--shadow-small);
 }
 
 .sidebar-line {

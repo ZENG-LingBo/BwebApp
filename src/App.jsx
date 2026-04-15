@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
-import StatusBar from './components/StatusBar'
 import TopBar from './components/TopBar'
 import Sidebar from './components/Sidebar'
-import BottomBar from './components/BottomBar'
+import ActionBar from './components/ActionBar'
+import HeroBackdrop from './components/HeroBackdrop'
 import {
-  DynamicHeroCard,
   DynamicSummaryCard,
   DynamicKnownFactsCard,
   DynamicTimelineCard,
@@ -18,37 +17,97 @@ import { useStories } from './hooks/useStories'
 
 function StoryView({ story, scrollRef }) {
   const [activeStep, setActiveStep] = useState(0)
+  const [focusedCardIdx, setFocusedCardIdx] = useState(null)
+
+  // Scroll handler — fades out hero content once the user scrolls past Card 1.
+  // The HeroBackdrop stays mounted (so the video keeps playing and can serve as
+  // a subtle backdrop), but its text/CTA block animates away so it doesn't
+  // bleed through between scrolled card gaps.
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+    const backdrop = document.querySelector('.hero-backdrop')
+    if (!backdrop) return
+
+    function handleScroll() {
+      const st = container.scrollTop
+      backdrop.classList.toggle('hero-backdrop--faded', st > 120)
+    }
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [story?.id, scrollRef])
 
   useEffect(() => {
     const container = scrollRef.current
     if (!container) return
 
     container.scrollTop = 0
+    setFocusedCardIdx(null)
+
+    // Track which card currently has the largest intersection with the viewport.
+    // That card gets `.card--focused`; all others get `.card--unfocused`, which
+    // in CSS maps to reduced opacity + blur (reading-focus pattern).
+    const ratios = new Map()
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          ratios.set(entry.target, entry.intersectionRatio)
           if (entry.isIntersecting) {
-            entry.target.classList.add('card--visible')
             const idx = Number(entry.target.dataset.cardIndex)
             if (!isNaN(idx)) setActiveStep(idx)
           }
         })
+
+        // Pick the card with highest current intersection ratio as "focused".
+        let best = null
+        let bestRatio = 0
+        ratios.forEach((r, el) => {
+          if (r > bestRatio) {
+            bestRatio = r
+            best = el
+          }
+        })
+        const focusedIdx = best ? Number(best.dataset.cardIndex) : null
+        setFocusedCardIdx(isNaN(focusedIdx) ? null : focusedIdx)
       },
-      { root: container, threshold: 0.15 }
+      {
+        root: container,
+        // Many thresholds → frequent ratio updates as the card crosses the viewport,
+        // so the focus switch feels smooth.
+        threshold: [0, 0.15, 0.3, 0.5, 0.7, 0.9, 1],
+      }
     )
 
     const cards = container.querySelectorAll('.card')
     cards.forEach((card) => observer.observe(card))
 
     return () => observer.disconnect()
-  }, [story, scrollRef])
+  }, [story?.id, scrollRef])
+
+  // Apply focused/unfocused classes imperatively — avoids re-rendering each card
+  // on every scroll tick just to toggle a class.
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+    const cards = container.querySelectorAll('.card')
+    cards.forEach((card) => {
+      const idx = Number(card.dataset.cardIndex)
+      const isFocused = idx === focusedCardIdx
+      card.classList.toggle('card--focused', isFocused)
+      card.classList.toggle('card--unfocused', focusedCardIdx !== null && !isFocused)
+    })
+  }, [focusedCardIdx, scrollRef])
 
   return (
     <>
       <div className="scroll-container" ref={scrollRef}>
+        {/* Spacer: lets the hero backdrop show through at scroll=0.
+            Matches the vertical position where Figma's "Base" panel begins (y≈553). */}
+        <div className="scroll-hero-spacer" aria-hidden />
+
         <div className="card-stack">
-          <DynamicHeroCard story={story} />
           <DynamicSummaryCard story={story} />
           <DynamicKnownFactsCard story={story} />
           <DynamicTimelineCard story={story} />
@@ -102,11 +161,12 @@ function App() {
 
   return (
     <div className="app-frame">
-      <div className="hero-bg" />
-      <div className="shade-top" />
-      <div className="shade-bottom" />
+      {/* Hero video/gradient backdrop — persistent behind the scroll content. */}
+      <HeroBackdrop story={story} />
 
-      <StatusBar />
+      {/* Frosted-glass fog behind the top chrome so scrolled text doesn't clash
+          with TopBar pills. */}
+      <div className="top-chrome-fog" aria-hidden />
 
       {story ? (
         <>
@@ -121,9 +181,10 @@ function App() {
         <WaitingScreen loading={loading} />
       )}
 
-      <div className="base-gradient" />
+      {/* Bottom fog behind the ActionBar */}
+      <div className="bottom-chrome-fog" aria-hidden />
 
-      <BottomBar
+      <ActionBar
         onNext={handleNextStory}
         onPrev={handlePrevStory}
         onRefresh={refresh}

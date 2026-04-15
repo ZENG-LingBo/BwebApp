@@ -1,0 +1,162 @@
+/* ActionBar — Figma node 308:40189 */
+
+.action-bar {
+  position: absolute;
+  width: 343px;
+  height: 40px;
+  left: calc(50% - 343px / 2);
+  top: 738px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Ask AI (left) — 80x40 per Figma "Frame 54" */
+.action-ask-ai {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 80px;
+  height: 40px;
+  padding: 0 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action-ask-ai-label {
+  flex: 0 0 auto;
+}
+
+.action-ask-ai svg {
+  flex: 0 0 auto;
+}
+
+/* Go to next story (center) — Figma "Button_01" 136x32, dark pill */
+.action-next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 136px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--separator);
+  border-radius: var(--r-pill);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.action-next-btn:hover:not(:disabled) {
+  background: #333633;
+}
+
+.action-next-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Right group (bookmark + more) — Figma "Frame 55" 80x40 */
+.action-right-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.action-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  padding: 0;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* "More" popover */
+.action-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  min-width: 200px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--separator);
+  border-radius: var(--r-sm2);
+  box-shadow: var(--shadow-small);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--r-xs);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.action-menu-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.action-menu-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.action-menu-footer {
+  padding: 8px 12px 4px;
+  border-top: 1px solid var(--separator);
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-tertiary);
+}
+
+/* Reused refresh spin */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.action-menu-item .spin {
+  animation: spin 1s linear infinite;
+}

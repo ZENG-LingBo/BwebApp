@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+// Empty base in both dev and prod. In dev, Vite's proxy config (vite.config.js)
+// forwards /api/* to the Express server on :3001 — that's more reliable than
+// hitting :3001 cross-origin (which breaks in sandboxed browser contexts).
+const API_BASE = ''
 
 export function useStories() {
   const [stories, setStories] = useState([])
