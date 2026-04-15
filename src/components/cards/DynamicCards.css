@@ -1,3 +1,16 @@
+/* ─── Summary card section label — Figma Label/Small token ───
+   Inter SemiBold 12/20, muted color. Used by DynamicSummaryCard's
+   WHAT HAPPENED / WHY IT MATTERS / WHAT'S NEXT sub-headings. */
+.summary-section-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
 /* ─── Video Card ─── */
 .video-card {
   padding: 16px;

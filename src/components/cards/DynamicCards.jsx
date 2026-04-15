@@ -148,27 +148,38 @@ export function DynamicSummaryCard({ story }) {
     })
   }
 
+  // Split into 3 individual cards so each section has its own scroll slot,
+  // its own focus-blur treatment, and the full --card-gap between sections
+  // (instead of being crammed inside a single card).
+  // All three share data-card-index="2" so the sidebar still highlights the
+  // "Summary" step when the user is reading any of them.
   return (
-    <div className="card summary-card" data-card-index="2">
-      <div className="summary-section">
-        <div className="summary-section-label">WHAT HAPPENED</div>
-        <div className="summary-body-wrap">
-          <div className="word-wrap">{renderWithTooltips(story.what_happened, 'peach')}</div>
+    <>
+      <div className="card summary-card" data-card-index="2">
+        <div className="summary-section">
+          <div className="summary-section-label">WHAT HAPPENED</div>
+          <div className="summary-body-wrap">
+            <div className="word-wrap">{renderWithTooltips(story.what_happened, 'peach')}</div>
+          </div>
         </div>
       </div>
-      <div className="summary-section">
-        <div className="summary-section-label">WHY IT MATTERS</div>
-        <div className="summary-body-wrap">
-          <div className="word-wrap">{renderWithTooltips(story.why_it_matters, 'green')}</div>
+      <div className="card summary-card" data-card-index="2">
+        <div className="summary-section">
+          <div className="summary-section-label">WHY IT MATTERS</div>
+          <div className="summary-body-wrap">
+            <div className="word-wrap">{renderWithTooltips(story.why_it_matters, 'green')}</div>
+          </div>
         </div>
       </div>
-      <div className="summary-section">
-        <div className="summary-section-label">WHAT'S NEXT</div>
-        <div className="summary-body-wrap">
-          <div className="word-wrap">{renderWithTooltips(story.whats_next, 'purple')}</div>
+      <div className="card summary-card" data-card-index="2">
+        <div className="summary-section">
+          <div className="summary-section-label">WHAT'S NEXT</div>
+          <div className="summary-body-wrap">
+            <div className="word-wrap">{renderWithTooltips(story.whats_next, 'purple')}</div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

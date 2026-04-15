@@ -3,7 +3,7 @@
   width: 359px;
   height: 32px;
   left: calc(50% - 359px / 2);
-  top: 52px;
+  top: 16px;
   z-index: 5;
   display: flex;
   justify-content: space-between;
@@ -30,6 +30,18 @@
   height: 32px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: var(--r-pill);
+}
+
+/* Severity indicator — Figma "Moderate" 3-bar icon (node 254:3989) */
+.severity-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--overlay-dark);
+  border-radius: var(--r-pill);
+  flex-shrink: 0;
 }
 
 .pill {
@@ -79,4 +91,29 @@
   cursor: pointer;
   border-radius: 8px;
   padding: 4px;
+}
+
+/* Bookmark button in TopBar (replaces close X — Figma node 254:3997) */
+.topbar-bookmark-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  background: var(--overlay-dark);
+  border: none;
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  padding: 4px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.topbar-bookmark-btn:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.topbar-bookmark-btn svg {
+  width: 16px;
+  height: 16px;
 }

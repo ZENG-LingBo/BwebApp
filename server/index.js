@@ -1,24 +1,11 @@
-import { readFileSync } from 'fs';
+// .env is loaded by node itself via the --env-file-if-exists flag in package.json.
+// This is important: env vars must be populated BEFORE any static import runs,
+// because modules like claude.js read process.env at top level (const API_KEY = ...).
+// A hand-rolled loader here would run too late due to ES module hoisting.
 import express from 'express';
 import cron from 'node-cron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-// Load .env file
-const __dirnameRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-try {
-  const envContent = readFileSync(path.join(__dirnameRoot, '.env'), 'utf-8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...rest] = trimmed.split('=');
-      if (key && rest.length) {
-        process.env[key.trim()] = rest.join('=').trim();
-      }
-    }
-  }
-} catch {}
-
 import db from './db.js';
 import { runPipeline } from './pipeline.js';
 

@@ -12,11 +12,13 @@
   width: 100%;
 }
 
+/* Figma Label/Small: Inter SemiBold 12/20 */
 .summary-section-label {
   font-family: var(--font-body);
-  font-weight: 400;
+  font-weight: 600;
   font-size: 12px;
-  line-height: 16px;
+  line-height: 20px;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
 }
 
