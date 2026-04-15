@@ -118,6 +118,28 @@ aren't flagged. The app applies two mitigations automatically:
    solely for the deployment and use its cookies. Cookies also expire —
    typically you need to re-export every few weeks.
 
+## Resetting a polluted DB
+
+If the stories table ends up with mismatched Claude responses (symptom:
+headlines that don't match article titles, or obviously swapped video
+search queries), wipe and refetch:
+
+```
+curl -X POST https://<your-railway-url>/api/stories/reset \
+  -H "Content-Type: application/json" \
+  -d '{"confirm":"yes-delete-all-stories"}'
+```
+
+That nukes the `stories` + `fetch_logs` tables AND deletes all downloaded
+MP4s from the volume. Then trigger a fresh pipeline from the app's ⋯
+menu (or post to `/api/stories/fetch`).
+
+A pipeline mutex now prevents two runs from happening at once, so after
+the reset you can safely trigger Refresh once. If you click it again
+while the first run is still going, the second call returns
+`{success: false, skipped: true, reason: "already-running"}` and the
+original run continues undisturbed.
+
 ## Troubleshooting
 
 - **`Claude generation failed: LLM API error 401`** — `LLM_API_KEY` isn't

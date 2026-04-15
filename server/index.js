@@ -5,6 +5,7 @@
 import express from 'express';
 import cron from 'node-cron';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import db from './db.js';
 import { runPipeline } from './pipeline.js';
@@ -95,7 +96,9 @@ app.get('/api/stories', (req, res) => {
 
 /**
  * POST /api/stories/fetch
- * Manually trigger the story pipeline
+ * Manually trigger the story pipeline. Pipeline has its own mutex, so
+ * hitting this endpoint while a pipeline is running returns immediately
+ * with `{success:false, skipped:true}` rather than starting a second one.
  */
 app.post('/api/stories/fetch', async (req, res) => {
   const count = Math.min(parseInt(req.body?.count) || 10, 15);
@@ -107,6 +110,50 @@ app.post('/api/stories/fetch', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+/**
+ * POST /api/stories/reset
+ * Destructive admin endpoint: wipes the stories table and all downloaded
+ * video files. Requires `{confirm: "yes-delete-all-stories"}` in the body
+ * to guard against accidental invocation. Use when the DB contains
+ * corrupted rows (e.g. from a crossed-response pipeline) and you want to
+ * start over with a fresh refetch.
+ */
+app.post('/api/stories/reset', (req, res) => {
+  if (req.body?.confirm !== 'yes-delete-all-stories') {
+    return res.status(400).json({
+      error: 'Missing confirmation',
+      hint: 'POST with body {"confirm":"yes-delete-all-stories"} to wipe all stories.',
+    });
+  }
+
+  const storyResult = db.prepare('DELETE FROM stories').run();
+  const logResult = db.prepare('DELETE FROM fetch_logs').run();
+
+  // Also remove downloaded MP4s so the volume doesn't grow unbounded across
+  // resets. Cookies file (.yt-cookies.txt) is kept — it's not a video.
+  let videosDeleted = 0;
+  try {
+    if (fs.existsSync(VIDEOS_DIR)) {
+      for (const f of fs.readdirSync(VIDEOS_DIR)) {
+        if (f.endsWith('.mp4')) {
+          fs.unlinkSync(path.join(VIDEOS_DIR, f));
+          videosDeleted++;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Reset: video cleanup failed:', err?.message || err);
+  }
+
+  console.log(`[RESET] Deleted ${storyResult.changes} stories, ${logResult.changes} fetch logs, ${videosDeleted} video files`);
+  res.json({
+    success: true,
+    storiesDeleted: storyResult.changes,
+    logsDeleted: logResult.changes,
+    videosDeleted,
+  });
 });
 
 /**

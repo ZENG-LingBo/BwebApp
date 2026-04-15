@@ -13,10 +13,30 @@ function slugify(text) {
     .slice(0, 80);
 }
 
+// Module-level mutex preventing two pipelines from running simultaneously.
+// Why this matters: concurrent pipelines were producing cross-contaminated
+// stories — Claude responses from one pipeline ended up being associated
+// with articles from the other (likely the LLM proxy's connection pooling
+// crossed request/response pairs, or at minimum the interleaved logs were
+// unusable for debugging). Even if the proxy is innocent, only one pipeline
+// should ever run at once — each one hammers RSS feeds + LLM + yt-dlp, and
+// running them in parallel just multiplies load for no benefit.
+let pipelineRunning = false;
+
 /**
  * Run the full pipeline: RSS → Rank → Claude → Video → DB
+ *
+ * If a pipeline is already in progress, this returns early rather than
+ * starting a second one. The manual-refresh endpoint surfaces that status
+ * so the UI could render a toast if needed.
  */
 export async function runPipeline(storyCount = 10) {
+  if (pipelineRunning) {
+    console.log('\n[PIPELINE] Skipped — another pipeline is already running.');
+    return { success: false, skipped: true, reason: 'already-running' };
+  }
+  pipelineRunning = true;
+
   console.log('\n=== STORY PIPELINE START ===');
   console.log(`Time: ${new Date().toISOString()}`);
 
@@ -182,5 +202,8 @@ export async function runPipeline(storyCount = 10) {
     console.error('Pipeline error:', err);
     logInsert.run(0, 'error', err.message);
     return { success: false, error: err.message };
+  } finally {
+    // Always release the mutex, even if the pipeline threw above.
+    pipelineRunning = false;
   }
 }
