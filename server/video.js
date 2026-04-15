@@ -177,9 +177,19 @@ export async function downloadVideo(videoId) {
 }
 
 /**
- * Search and download the best matching vertical short video for a story.
- * Always downloads — no embed fallback. Returns null if no Shorts-format
- * video matches (caller falls back to gradient hero).
+ * Search for a vertical Short matching the story's query, download it if
+ * possible, otherwise return the YouTube embed URL so the frontend can fall
+ * back to the iframe player. Returns null only when *search* finds nothing
+ * (no candidate video at all).
+ *
+ * Why the iframe fallback matters: on Railway (and other cloud hosts),
+ * yt-dlp video downloads frequently fail to YouTube's bot detection even
+ * after we've applied the tv_simply/web_safari extractor tricks + cookies.
+ * The iframe player, loaded directly from youtube.com in the user's
+ * browser, doesn't have that problem — it's the user's IP, not the
+ * server's. So when download fails, we still record enough info to render
+ * the iframe, and HeroBackdrop.jsx already knows to prefer video_filename
+ * first, embed URL second, gradient last.
  */
 export async function getVideoForStory(searchQuery) {
   console.log(`  Searching YouTube Shorts shelf (9:16 guaranteed): "${searchQuery}"`);
@@ -193,20 +203,31 @@ export async function getVideoForStory(searchQuery) {
   const best = videos[0];
   console.log(`  Found Short: "${best.title}" (${best.duration}s) ${best.url}`);
 
-  // Always download the video
+  // Canonical embed URL that works in an iframe even when the server can't
+  // reach youtube.com (user's browser loads it directly).
+  const embedUrl = `https://www.youtube.com/embed/${best.id}`;
+
   console.log(`  Downloading ${best.id}...`);
   const filename = await downloadVideo(best.id);
 
-  if (!filename) {
-    console.log('  Download failed, skipping video');
-    return null;
+  if (filename) {
+    return {
+      videoId: best.id,
+      videoTitle: best.title,
+      videoFilename: filename,
+      videoThumbnail: best.thumbnail,
+      videoEmbedUrl: embedUrl,
+    };
   }
 
+  // Download failed — keep the embed URL so the frontend plays the Short
+  // via YouTube's iframe instead of showing the gradient fallback.
+  console.log(`  Download failed; falling back to YouTube iframe for ${best.id}`);
   return {
     videoId: best.id,
     videoTitle: best.title,
-    videoFilename: filename,
+    videoFilename: null,
     videoThumbnail: best.thumbnail,
-    videoEmbedUrl: null, // No embed — always use downloaded file
+    videoEmbedUrl: embedUrl,
   };
 }

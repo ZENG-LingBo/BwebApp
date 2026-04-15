@@ -64,14 +64,52 @@ export async function runPipeline(storyCount = 10) {
 
     let successCount = 0;
 
+    const updateVideo = db.prepare(`
+      UPDATE stories SET
+        video_id = ?, video_title = ?, video_filename = ?,
+        video_thumbnail = ?, video_embed_url = ?
+      WHERE id = ?
+    `);
+
     for (let i = 0; i < topStories.length; i++) {
       const article = topStories[i];
       const slug = slugify(article.title);
 
-      // Check if we already have this story
-      const existing = db.prepare('SELECT id FROM stories WHERE slug = ?').get(slug);
+      // Check if we already have this story.
+      // Skip fully only if it already has a playable video (downloaded or
+      // an embeddable URL). If it lacks a video, try to backfill one without
+      // regenerating the Claude card content (saves LLM credits on retries).
+      const existing = db.prepare(
+        'SELECT id, video_filename, video_embed_url FROM stories WHERE slug = ?'
+      ).get(slug);
+
       if (existing) {
-        console.log(`\n  [${i + 1}/${topStories.length}] SKIP (already exists): ${article.title}`);
+        const hasVideo = existing.video_filename || existing.video_embed_url;
+        if (hasVideo) {
+          console.log(`\n  [${i + 1}/${topStories.length}] SKIP (already has video): ${article.title}`);
+          successCount++;
+          continue;
+        }
+
+        console.log(`\n  [${i + 1}/${topStories.length}] Retrying video for existing story: ${article.title}`);
+        try {
+          const video = await getVideoForStory(article.title);
+          if (video) {
+            updateVideo.run(
+              video.videoId,
+              video.videoTitle,
+              video.videoFilename,
+              video.videoThumbnail,
+              video.videoEmbedUrl,
+              existing.id
+            );
+            console.log('  Updated story with video.');
+          } else {
+            console.log('  Still no Short matched; leaving story as-is.');
+          }
+        } catch (err) {
+          console.warn('  Video retry failed:', err?.message || err);
+        }
         successCount++;
         continue;
       }
