@@ -146,10 +146,15 @@ app.get('/{*path}', (req, res) => {
 
 // ─── CRON SCHEDULER ───────────────────────────────────────
 
-// Run daily at 6:00 AM Hong Kong time (UTC+8)
+// Run daily at 6:00 AM Hong Kong time (UTC+8). Wrap in try/catch so a
+// transient API failure doesn't crash the server and kill subsequent runs.
 cron.schedule('0 6 * * *', async () => {
   console.log('\n[CRON] Daily story fetch triggered (6 AM HKT)');
-  await runPipeline(10);
+  try {
+    await runPipeline(10);
+  } catch (err) {
+    console.error('[CRON] Daily fetch failed:', err?.message || err);
+  }
 }, {
   timezone: 'Asia/Hong_Kong'
 });
@@ -178,26 +183,47 @@ function parseStory(story) {
 
 // ─── START ────────────────────────────────────────────────
 
-app.listen(PORT, async () => {
-  console.log(`\n🚀 BwebApp server running on http://localhost:${PORT}`);
-  console.log(`   API: http://localhost:${PORT}/api/status`);
-  console.log(`   Stories: http://localhost:${PORT}/api/stories/today`);
+// Keep the server alive even if a background task (pipeline, cron) throws.
+// Node 22+ terminates the process on unhandled promise rejections by default,
+// which silently kills Railway deployments whenever the LLM proxy has a
+// hiccup. Log it loudly and keep serving traffic instead.
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n🚀 BwebApp server listening on 0.0.0.0:${PORT}`);
+  console.log(`   API: /api/status`);
+  console.log(`   Stories: /api/stories/today`);
   console.log(`   Cron: Daily at 06:00 AM Hong Kong time\n`);
 
-  // Auto-fetch on startup if no stories exist for today
-  const todayCount = db.prepare(
-    "SELECT COUNT(*) as count FROM stories WHERE date(fetched_at) = date('now')"
-  ).get().count;
+  // Startup auto-fetch runs in the background so the healthcheck can respond
+  // immediately. Any error here must NOT take down the server.
+  (async () => {
+    try {
+      const todayCount = db.prepare(
+        "SELECT COUNT(*) as count FROM stories WHERE date(fetched_at) = date('now')"
+      ).get().count;
 
-  if (todayCount === 0) {
-    const totalCount = db.prepare('SELECT COUNT(*) as count FROM stories').get().count;
-    if (totalCount === 0) {
+      if (todayCount > 0) {
+        console.log(`[STARTUP] ${todayCount} stories already fetched today.`);
+        return;
+      }
+
+      const totalCount = db.prepare('SELECT COUNT(*) as count FROM stories').get().count;
+      if (totalCount > 0) {
+        console.log(`[STARTUP] No stories today, but ${totalCount} from previous days. Next fetch at 6 AM HKT.`);
+        return;
+      }
+
       console.log('[STARTUP] No stories in database. Fetching 10 stories now...');
       await runPipeline(10);
-    } else {
-      console.log(`[STARTUP] No stories today, but ${totalCount} from previous days. Next fetch at 6 AM HKT.`);
+      console.log('[STARTUP] Initial fetch complete.');
+    } catch (err) {
+      console.error('[STARTUP] Auto-fetch failed (server still running):', err?.message || err);
     }
-  } else {
-    console.log(`[STARTUP] ${todayCount} stories already fetched today.`);
-  }
+  })();
 });

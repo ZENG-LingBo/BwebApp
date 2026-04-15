@@ -26,4 +26,8 @@ RUN mkdir -p server/data server/videos
 
 EXPOSE 3001
 
-CMD ["node", "server/index.js"]
+# Match package.json's `server` script: --env-file-if-exists lets the same
+# command work in dev (with a .env file) and on Railway (env vars injected
+# natively, no .env file). Without the `-if-exists` suffix Node would crash
+# on Railway because no .env is present.
+CMD ["node", "--env-file-if-exists=.env", "server/index.js"]
