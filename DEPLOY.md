@@ -80,6 +80,44 @@ curl -X POST https://<your-service>.up.railway.app/api/stories/fetch \
 Then open the base URL in a browser — the React app should load and the
 hero video should play.
 
+## YouTube bot detection (important on Railway)
+
+YouTube aggressively flags cloud datacenter IPs. You will see errors like:
+
+```
+ERROR: [youtube] <id>: Sign in to confirm you're not a bot.
+```
+
+Even though the same query works fine on your laptop — residential IPs
+aren't flagged. The app applies two mitigations automatically:
+
+1. **Newer yt-dlp clients** (`tv_simply`, `web_safari`) that have
+   different bot-detection signatures. Works for ~60-70% of queries
+   without any further setup.
+
+2. **Optional cookies fallback** for the remaining cases. Export cookies
+   from a logged-in YouTube session in your browser, base64 the result,
+   and set it as a Railway variable:
+
+   a. Install a "cookies.txt" browser extension (e.g.
+      [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)).
+   b. Log in to YouTube in that browser.
+   c. Click the extension, export cookies for `youtube.com` as Netscape format.
+   d. Base64 the file:
+      - macOS/Linux: `base64 -w 0 cookies.txt` (or `base64 < cookies.txt | tr -d '\n'`)
+      - Windows PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes('cookies.txt'))`
+   e. Copy the output string. In Railway → Variables, add:
+      ```
+      YOUTUBE_COOKIES_B64 = <paste the base64 string>
+      ```
+   f. Redeploy. You'll see `[video] Loaded YouTube cookies from YOUTUBE_COOKIES_B64`
+      in the startup log.
+
+   **Security note:** these cookies grant access to your YouTube account.
+   Don't reuse your daily-driver account; create a fresh Google account
+   solely for the deployment and use its cookies. Cookies also expire —
+   typically you need to re-export every few weeks.
+
 ## Troubleshooting
 
 - **`Claude generation failed: LLM API error 401`** — `LLM_API_KEY` isn't

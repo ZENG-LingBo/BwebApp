@@ -17,6 +17,48 @@ if (!fs.existsSync(VIDEOS_DIR)) {
   fs.mkdirSync(VIDEOS_DIR, { recursive: true });
 }
 
+// ─── YouTube bot-detection workarounds ─────────────────────────────────
+//
+// Cloud datacenter IPs (Railway, Fly, AWS, GCP, …) get flagged by YouTube's
+// anti-bot heuristics far more aggressively than residential IPs. On Railway
+// we routinely hit "Sign in to confirm you're not a bot."
+//
+// Two layered mitigations:
+//
+// 1. `player_client=tv_simply,web_safari` — these are newer yt-dlp clients
+//    that impersonate TV / Safari browsers. Their bot-detection surface is
+//    different from the default `web` client and often works without any
+//    cookies.
+//
+// 2. If a `YOUTUBE_COOKIES_B64` env var is set, decode it to a cookies file
+//    and pass `--cookies` to yt-dlp. This is the official yt-dlp-recommended
+//    fallback. Export cookies once from a logged-in Chrome session with
+//    any "cookies.txt" browser extension, base64 the file, and paste the
+//    base64 into Railway → Variables.
+//
+// Both mitigations apply to every yt-dlp invocation (search + download).
+
+const EXTRACTOR_ARGS = 'youtube:player_client=tv_simply,web_safari';
+
+let COOKIES_FILE = null;
+if (process.env.YOUTUBE_COOKIES_B64) {
+  try {
+    const cookiesText = Buffer.from(process.env.YOUTUBE_COOKIES_B64, 'base64').toString('utf-8');
+    COOKIES_FILE = path.join(VIDEOS_DIR, '.yt-cookies.txt');
+    fs.writeFileSync(COOKIES_FILE, cookiesText, { mode: 0o600 });
+    console.log('[video] Loaded YouTube cookies from YOUTUBE_COOKIES_B64');
+  } catch (err) {
+    console.warn('[video] Failed to decode YOUTUBE_COOKIES_B64:', err.message);
+    COOKIES_FILE = null;
+  }
+}
+
+function ytDlpArgs(extra = []) {
+  const base = ['--extractor-args', EXTRACTOR_ARGS];
+  if (COOKIES_FILE) base.push('--cookies', COOKIES_FILE);
+  return [...base, ...extra];
+}
+
 /**
  * Search YouTube specifically for genuine Shorts (vertical 9:16 content).
  *
@@ -44,13 +86,13 @@ export async function searchYouTube(query, maxResults = 5) {
     `&sp=${SP_SHORT_DURATION}`;
 
   try {
-    const { stdout } = await execFileAsync('yt-dlp', [
+    const { stdout } = await execFileAsync('yt-dlp', ytDlpArgs([
       searchUrl,
       '--flat-playlist',
       '--dump-json',
       '--no-download',
       '--playlist-items', `1:${CANDIDATES}`,
-    ], { timeout: 60000, maxBuffer: 1024 * 1024 * 10 });
+    ]), { timeout: 60000, maxBuffer: 1024 * 1024 * 10 });
 
     const videos = stdout.trim().split('\n')
       .filter(line => line.trim().startsWith('{'))
@@ -97,7 +139,7 @@ export async function downloadVideo(videoId) {
   }
 
   try {
-    await execFileAsync('yt-dlp', [
+    await execFileAsync('yt-dlp', ytDlpArgs([
       `https://www.youtube.com/watch?v=${videoId}`,
       // Best quality MP4
       '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
@@ -105,7 +147,7 @@ export async function downloadVideo(videoId) {
       '-o', outputTemplate,
       '--no-playlist',
       '--max-filesize', '100m',
-    ], { timeout: 120000 });
+    ]), { timeout: 120000 });
 
     if (fs.existsSync(expectedFile)) {
       return `${videoId}.mp4`;
